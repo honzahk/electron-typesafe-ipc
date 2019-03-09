@@ -1,3 +1,3 @@
 # electron-typesafe-ipc
 
-Utility for safe inter process communication (IPC) in electron. TypeScript supported.
+Module for safe inter process communication (IPC) in electron. TypeScript supported.

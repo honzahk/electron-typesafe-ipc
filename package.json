@@ -1,21 +1,28 @@
 {
 	"name": "electron-typesafe-ipc",
-	"version": "0.0.10",
+	"version": "0.0.11",
 	"author": "honzahk",
-	"description": "Utility for safe inter process communication (IPC) in electron. TypeScript supported.",
+	"description": "Module for safe inter process communication (IPC) in electron. TypeScript supported.",
 	"keywords": [
 		"electron",
 		"ipc",
 		"typescript",
+		"module",
 		"typesafe",
 		"type-safe",
 		"safe",
-		"inter process communication",
+		"inter",
+		"process",
+		"communication",
 		"utility"
 	],
 	"license": "ISC",
 	"main": "index.js",
 	"types": "index.d.ts",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/honzahk/electron-typesafe-ipc"
+	},
 	"scripts": {
 		"clean": "rm -rf dist/*",
 		"build": "tsc -p build/tsconfig.build.json",

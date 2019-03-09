@@ -8,17 +8,18 @@ main();
 
 function main() {
 	create_dist_package_json();
+	fs.copyFileSync(path.resolve(PATH_PROJECT_ROOT, "README.md"), path.resolve(PATH_DIST_ROOT, "README.md"));
 }
 
 function create_dist_package_json() {
-	//nacteme obsah origo package.json
+	//load contents of original package.json
 	const package_json_orig = require("../package.json");
 
-	//specifikuje fields, ktere chceme prekopirovat do dist verze
+	//specify fields, which we want to copy into dist version
 	const fields = ["name", "version", "description", "main", "keywords", "author", "license", "dependencies", "devDependencies"];
 
 	const package_json_dist_obj = {};
-	//atributy chceme zkopirovat v poradi, jake je v originale
+	//we want to copy fields in their original order
 	Object.keys(package_json_orig).forEach((key) => {
 		if (fields.includes(key)) {
 			package_json_dist_obj[key] = package_json_orig[key];
