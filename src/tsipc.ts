@@ -138,14 +138,10 @@ class IpcUtil<TIpcListParams extends {main: any; renderer: any}> {
 	}
 }
 
-function registerMany<TIpcListParams extends {main: any; renderer: any}>(ipcList: {
+export function createTypesafeIpc<TIpcListParams extends {main: any; renderer: any}>(ipcList: {
 	main: {[K in keyof TIpcListParams["main"]]: string};
 	renderer: {[K in keyof TIpcListParams["renderer"]]: string};
 }): TIPcListRegistered<TIpcListParams> {
 	const ipcUtil = new IpcUtil(ipcList);
 	return ipcUtil.interface;
 }
-
-export const libipc = {
-	registerMany
-};
