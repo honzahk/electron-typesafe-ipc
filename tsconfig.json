@@ -1,0 +1,13 @@
+{
+	"compilerOptions": {
+		"target": "es6",
+		"module": "commonjs",
+		"outDir": "dist",
+		"declaration": true,
+		"strict": true,
+		"sourceMap": true,
+
+		"noImplicitAny": false
+	},
+	"include": ["src", "__tests__"]
+}
