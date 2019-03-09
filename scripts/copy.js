@@ -15,8 +15,8 @@ function create_dist_package_json() {
 	//load contents of original package.json
 	const package_json_orig = require("../package.json");
 
-	//specify fields to be copied into dist package.json
-	const {...keysToCopyIntoDist} = package_json_orig;
+	//specify fields to omit from dist package.json; the rest will be copied
+	const {scripts, ...keysToCopyIntoDist} = package_json_orig;
 
 	//write dist package.json
 	const package_json_dist = JSON.stringify(keysToCopyIntoDist, null, 4);

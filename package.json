@@ -27,7 +27,8 @@
 		"clean": "rm -rf dist/*",
 		"build": "tsc -p build/tsconfig.build.json",
 		"postbuild": "node scripts/copy.js",
-		"dist": "yarn clean && yarn build"
+		"dist": "yarn clean && yarn build",
+		"pub": "yarn dist && npm publish dist"
 	},
 	"devDependencies": {
 		"@types/jest": "^24.0.10",
