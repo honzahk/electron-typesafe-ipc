@@ -1,6 +1,6 @@
 {
 	"name": "electron-typesafe-ipc",
-	"version": "0.0.12",
+	"version": "0.0.13",
 	"author": "honzahk",
 	"description": "Module for safe inter process communication (IPC) in electron. TypeScript supported.",
 	"keywords": [
