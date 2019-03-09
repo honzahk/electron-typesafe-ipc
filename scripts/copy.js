@@ -15,17 +15,10 @@ function create_dist_package_json() {
 	//load contents of original package.json
 	const package_json_orig = require("../package.json");
 
-	//specify fields, which we want to copy into dist version
-	const fields = ["name", "version", "description", "main", "keywords", "author", "license", "dependencies", "devDependencies"];
+	//specify fields to be copied into dist package.json
+	const {...keysToCopyIntoDist} = package_json_orig;
 
-	const package_json_dist_obj = {};
-	//we want to copy fields in their original order
-	Object.keys(package_json_orig).forEach((key) => {
-		if (fields.includes(key)) {
-			package_json_dist_obj[key] = package_json_orig[key];
-		}
-	});
-
-	const package_json_dst = JSON.stringify(package_json_dist_obj, null, 4);
-	fs.writeFileSync(path.resolve(PATH_DIST_ROOT, "package.json"), package_json_dst);
+	//write dist package.json
+	const package_json_dist = JSON.stringify(keysToCopyIntoDist, null, 4);
+	fs.writeFileSync(path.resolve(PATH_DIST_ROOT, "package.json"), package_json_dist);
 }
