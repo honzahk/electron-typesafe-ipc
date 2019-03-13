@@ -6,22 +6,23 @@ type TIpcOnFunction<TIpcParam> = (callback: (params: TIpcParam, e) => void) => v
 type TIpcOnceFunction<TIpcParam> = TIpcOnFunction<TIpcParam>; //typeof once == typeof on
 type TIpcRemoveFunction = () => void;
 
-type TIPcListRegistered<TIpcListParams extends {main: any; renderer: any}> = {
+type TIPcListRegistered<TIpcListParams extends {main: any; rend: any}> = {
 	main: {
 		send: {[K in keyof TIpcListParams["main"]]: TIpcMainSendFunction<TIpcListParams["main"][K]>};
-		on: {[K in keyof TIpcListParams["renderer"]]: TIpcOnFunction<TIpcListParams["renderer"][K]>};
-		once: {[K in keyof TIpcListParams["renderer"]]: TIpcOnceFunction<TIpcListParams["renderer"][K]>};
-		remove: {[K in keyof TIpcListParams["renderer"]]: TIpcRemoveFunction};
+		on: {[K in keyof TIpcListParams["rend"]]: TIpcOnFunction<TIpcListParams["rend"][K]>};
+		once: {[K in keyof TIpcListParams["rend"]]: TIpcOnceFunction<TIpcListParams["rend"][K]>};
+		remove: {[K in keyof TIpcListParams["rend"]]: TIpcRemoveFunction};
 	};
 	rend: {
-		send: {[K in keyof TIpcListParams["renderer"]]: TIpcRendererSendFunction<TIpcListParams["renderer"][K]>};
+		send: {[K in keyof TIpcListParams["rend"]]: TIpcRendererSendFunction<TIpcListParams["rend"][K]>};
 		on: {[K in keyof TIpcListParams["main"]]: TIpcOnFunction<TIpcListParams["main"][K]>};
 		once: {[K in keyof TIpcListParams["main"]]: TIpcOnceFunction<TIpcListParams["main"][K]>};
 		remove: {[K in keyof TIpcListParams["main"]]: TIpcRemoveFunction};
 	};
 };
 
-class IpcUtil<TIpcListParams extends {main: any; renderer: any}> {
+
+class IpcUtil<TIpcListParams extends {main: any; rend: any}> {
 	public registeredListeners = {
 		main: {},
 		rend: {}
@@ -127,20 +128,20 @@ class IpcUtil<TIpcListParams extends {main: any; renderer: any}> {
 	}
 
 	// ###############################################################################################################
-	constructor(ipcList: {main: {[K in keyof TIpcListParams["main"]]: string}; renderer: {[K in keyof TIpcListParams["renderer"]]: string}}) {
+	constructor(ipcList: {main: {[K in keyof TIpcListParams["main"]]: string}; rend: {[K in keyof TIpcListParams["rend"]]: string}}) {
 		for (let key in ipcList["main"]) {
 			this.registerMainToRend(key, ipcList["main"][key]);
 		}
 
-		for (let key in ipcList["renderer"]) {
-			this.registerRendToMain(key, ipcList["renderer"][key]);
+		for (let key in ipcList["rend"]) {
+			this.registerRendToMain(key, ipcList["rend"][key]);
 		}
 	}
 }
 
-export function createTypesafeIpc<TIpcListParams extends {main: any; renderer: any}>(ipcList: {
+export function createTypesafeIpc<TIpcListParams extends {main: any; rend: any}>(ipcList: {
 	main: {[K in keyof TIpcListParams["main"]]: string};
-	renderer: {[K in keyof TIpcListParams["renderer"]]: string};
+	rend: {[K in keyof TIpcListParams["rend"]]: string};
 }): TIPcListRegistered<TIpcListParams> {
 	const ipcUtil = new IpcUtil(ipcList);
 	return ipcUtil.interface;
