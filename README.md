@@ -97,6 +97,8 @@ tsipc.rend.remove;
 
 ## TODO
 
+- [ ] app for testing (with webpack)
+- [ ] minimal app as an example
 - [ ] bi-directional channels (both main->rend and rend->main)
 
 ### sync communication
