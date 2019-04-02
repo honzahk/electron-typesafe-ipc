@@ -1,1 +1,1 @@
-export {createTypesafeIpc} from "./tsipc";
+export {createIpcChannel, createTypesafeIpc} from "./tsipc";

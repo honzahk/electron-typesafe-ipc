@@ -6,143 +6,178 @@ type TIpcOnFunction<TIpcParam> = (callback: (params: TIpcParam, e) => void) => v
 type TIpcOnceFunction<TIpcParam> = TIpcOnFunction<TIpcParam>; //typeof once == typeof on
 type TIpcRemoveFunction = () => void;
 
-type TIPcListRegistered<TIpcListParams extends {main: any; rend: any}> = {
+type TIpcOutput<T extends TIpcSchema> = {
 	main: {
-		send: {[K in keyof TIpcListParams["main"]]: TIpcMainSendFunction<TIpcListParams["main"][K]>};
-		on: {[K in keyof TIpcListParams["rend"]]: TIpcOnFunction<TIpcListParams["rend"][K]>};
-		once: {[K in keyof TIpcListParams["rend"]]: TIpcOnceFunction<TIpcListParams["rend"][K]>};
-		remove: {[K in keyof TIpcListParams["rend"]]: TIpcRemoveFunction};
+		send: {[K in keyof T["main"]]: TIpcMainSendFunction<T["main"][K]["param"]>};
+		on: {[K in keyof T["rend"]]: TIpcOnFunction<T["rend"][K]["param"]>};
+		once: {[K in keyof T["rend"]]: TIpcOnceFunction<T["rend"][K]["param"]>};
+		remove: {[K in keyof T["rend"]]: TIpcRemoveFunction};
 	};
 	rend: {
-		send: {[K in keyof TIpcListParams["rend"]]: TIpcRendererSendFunction<TIpcListParams["rend"][K]>};
-		on: {[K in keyof TIpcListParams["main"]]: TIpcOnFunction<TIpcListParams["main"][K]>};
-		once: {[K in keyof TIpcListParams["main"]]: TIpcOnceFunction<TIpcListParams["main"][K]>};
-		remove: {[K in keyof TIpcListParams["main"]]: TIpcRemoveFunction};
+		send: {[K in keyof T["rend"]]: TIpcRendererSendFunction<T["rend"][K]["param"]>};
+		on: {[K in keyof T["main"]]: TIpcOnFunction<T["main"][K]["param"]>};
+		once: {[K in keyof T["main"]]: TIpcOnceFunction<T["main"][K]["param"]>};
+		remove: {[K in keyof T["main"]]: TIpcRemoveFunction};
 	};
 };
 
+type TChannelKey = string;
+type TChannelMsg = string;
 
-class IpcUtil<TIpcListParams extends {main: any; rend: any}> {
+class IpcUtil<T extends TIpcSchema> {
 	public registeredListeners = {
 		main: {},
 		rend: {}
 	};
 
-	public interface: TIPcListRegistered<TIpcListParams> = {
+	public interface: TIpcOutput<T> = {
 		main: {send: {}, on: {}, once: {}, remove: {}},
 		rend: {send: {}, on: {}, once: {}, remove: {}}
 	} as any;
 
+
 	// ###############################################################################################################
-	registerMainToRend<TIpcParam>(key: string, msg: string): void {
-		this.registerMainSend(key, msg);
-		this.registerRendOn(key, msg);
-		this.registerRendOnce(key, msg);
-		this.registerRendRemove(key, msg);
+	constructor(ipcSchema:TIpcSchema) {
+		for (let key in ipcSchema["main"]) {
+			this.registerMainToRend(key, ipcSchema["main"][key]);
+		}
+
+		for (let key in ipcSchema["rend"]) {
+			this.registerRendToMain(key, ipcSchema["rend"][key]);
+		}
 	}
 
-	registerMainSend<TIpcParam>(key: string, msg: string): void {
-		this.interface.main.send[key] = (win: BrowserWindow, params: TIpcParam) => {
-			win.webContents.send(msg, params);
+	// ###############################################################################################################
+	registerMainToRend(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.registerMainSend(key,ipcChannelSchema);
+		this.registerRendOn(key,ipcChannelSchema);
+		this.registerRendOnce(key,ipcChannelSchema);
+		this.registerRendRemove(key,ipcChannelSchema);
+	}
+
+	registerMainSend(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.main.send[key] = (win: BrowserWindow, params: typeof ipcChannelSchema.param) => {
+			win.webContents.send(ipcChannelSchema.msg, params);
 		};
 	}
 
-	registerMainOn<TIpcParam>(key: string, msg: string): void {
-		this.interface.main.on[key] = (callback: (params: TIpcParam, e) => void) => {
+	registerMainOn(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.main.on[key] = (callback: (params: typeof ipcChannelSchema.param, e) => void) => {
 			const listeners = this.registeredListeners.main;
-			if (listeners[msg] != null) {
+			if (listeners[ipcChannelSchema.msg] != null) {
 				throw new Error("Cannot register multiple listeners on a single message");
 			}
-			listeners[msg] = (e, params) => callback(params, e);
-			ipcMain.on(msg, listeners[msg]);
+			listeners[ipcChannelSchema.msg] = (e, params) => callback(params, e);
+			ipcMain.on(ipcChannelSchema.msg, listeners[ipcChannelSchema.msg]);
 		};
 	}
 
-	registerMainOnce<TIpcParam>(key: string, msg: string): void {
-		this.interface.main.once[key] = (callback: (params: TIpcParam, e) => void) => {
+	registerMainOnce(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.main.once[key] = (callback: (params: typeof ipcChannelSchema.param, e) => void) => {
 			const listeners = this.registeredListeners.main;
-			if (listeners[msg] != null) {
+			if (listeners[ipcChannelSchema.msg] != null) {
 				throw new Error("Cannot register multiple listeners on a single message");
 			}
-			listeners[msg] = (e, params) => callback(params, e);
-			ipcMain.once(msg, listeners[msg]);
+			listeners[ipcChannelSchema.msg] = (e, params) => callback(params, e);
+			ipcMain.once(ipcChannelSchema.msg, listeners[ipcChannelSchema.msg]);
 		};
 	}
 
-	registerMainRemove(key: string, msg: string): void {
+	registerMainRemove(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
 		this.interface.main.remove[key] = () => {
 			const listeners = this.registeredListeners.main;
-			if (listeners[msg] == null) {
+			if (listeners[ipcChannelSchema.msg] == null) {
 				throw new Error("Cannot remove listener because it does not exist");
 			}
-			ipcMain.removeListener(msg, listeners[msg]);
-			listeners[msg] = null;
+			ipcMain.removeListener(ipcChannelSchema.msg, listeners[ipcChannelSchema.msg]);
+			listeners[ipcChannelSchema.msg] = null;
 		};
 	}
 
 	// ###############################################################################################################
-	registerRendToMain<TIpcParam>(key: string, msg: string): void {
-		this.registerRendSend(key, msg);
-		this.registerMainOn(key, msg);
-		this.registerMainOnce(key, msg);
-		this.registerMainRemove(key, msg);
+	registerRendToMain(key: TChannelKey,ipcChannelSchema: TIpcChannelSchema): void {
+		this.registerRendSend(key,ipcChannelSchema);
+		this.registerMainOn(key,ipcChannelSchema);
+		this.registerMainOnce(key,ipcChannelSchema);
+		this.registerMainRemove(key,ipcChannelSchema);
 	}
 
-	registerRendSend<TIpcParam>(key: string, msg: string): void {
-		this.interface.rend.send[key] = (params: TIpcParam) => {
-			ipcRenderer.send(msg, params);
+	registerRendSend(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.rend.send[key] = (params: typeof ipcChannelSchema.param) => {
+			ipcRenderer.send(ipcChannelSchema.msg, params);
 		};
 	}
 
-	registerRendOn<TIpcParam>(key: string, msg: string): void {
-		this.interface.rend.on[key] = (callback: (params: TIpcParam, e) => void) => {
+	registerRendOn(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.rend.on[key] = (callback: (params: typeof ipcChannelSchema.param, e) => void) => {
 			const listeners = this.registeredListeners.rend;
-			if (listeners[msg] != null) {
+			if (listeners[ipcChannelSchema.msg] != null) {
 				throw new Error("Cannot register multiple listeners on a single message");
 			}
-			listeners[msg] = (e, params) => callback(params, e);
-			ipcRenderer.on(msg, listeners[msg]);
+			listeners[ipcChannelSchema.msg] = (e, params) => callback(params, e);
+			ipcRenderer.on(ipcChannelSchema.msg, listeners[ipcChannelSchema.msg]);
 		};
 	}
 
-	registerRendOnce<TIpcParam>(key: string, msg: string): void {
-		this.interface.rend.once[key] = (callback: (params: TIpcParam, e) => void) => {
+	registerRendOnce(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.rend.once[key] = (callback: (params: typeof ipcChannelSchema.param, e) => void) => {
 			const listeners = this.registeredListeners.rend;
-			if (listeners[msg] != null) {
+			if (listeners[ipcChannelSchema.msg] != null) {
 				throw new Error("Cannot register multiple listeners on a single message");
 			}
-			listeners[msg] = (e, params) => callback(params, e);
-			ipcRenderer.once(msg, listeners[msg]);
+			listeners[ipcChannelSchema.msg] = (e, params) => callback(params, e);
+			ipcRenderer.once(ipcChannelSchema.msg, listeners[ipcChannelSchema.msg]);
 		};
 	}
 
-	registerRendRemove(key: string, msg: string): void {
+	registerRendRemove(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
 		this.interface.rend.remove[key] = () => {
 			const listeners = this.registeredListeners.rend;
-			if (listeners[msg] == null) {
+			if (listeners[ipcChannelSchema.msg] == null) {
 				throw new Error("Cannot remove listener because it does not exist");
 			}
-			ipcRenderer.removeListener(msg, listeners[msg]);
-			listeners[msg] = null;
+			ipcRenderer.removeListener(ipcChannelSchema.msg, listeners[ipcChannelSchema.msg]);
+			listeners[ipcChannelSchema.msg] = null;
 		};
-	}
-
-	// ###############################################################################################################
-	constructor(ipcList: {main: {[K in keyof TIpcListParams["main"]]: string}; rend: {[K in keyof TIpcListParams["rend"]]: string}}) {
-		for (let key in ipcList["main"]) {
-			this.registerMainToRend(key, ipcList["main"][key]);
-		}
-
-		for (let key in ipcList["rend"]) {
-			this.registerRendToMain(key, ipcList["rend"][key]);
-		}
 	}
 }
 
-export function createTypesafeIpc<TIpcListParams extends {main: any; rend: any}>(ipcList: {
-	main: {[K in keyof TIpcListParams["main"]]: string};
-	rend: {[K in keyof TIpcListParams["rend"]]: string};
-}): TIPcListRegistered<TIpcListParams> {
-	const ipcUtil = new IpcUtil(ipcList);
+/**
+ * ipc channel configuration object type
+ */
+type TIpcChannelConfig = {
+	//channel name used in the underlying ipc call ipcRenderer.on(msg,()=>{...})
+	msg: string;
+}
+
+/**
+ * this function is used for declaration of one specific ipc channel in ipc schema
+ * input information consists of two parts:
+ * 		1) type declaration
+ * 			- TIpcChannelParam - type of parameter (payload) passed via channel
+ * 		2) channel configuration
+ * 			- config: TIpcChannelConfig
+ */
+export function createIpcChannel<TIpcChannelParam extends void | any>(config: TIpcChannelConfig) {
+	return {
+		msg: config.msg,
+		param: (null as any) as TIpcChannelParam
+	};
+}
+
+/**
+ * 
+ */
+type TIpcChannelSchema =  ReturnType<typeof createIpcChannel>;
+
+
+
+
+type TIpcSchema = {
+	main: {[ipcChannelKey: string]: TIpcChannelSchema};
+	rend: {[ipcChannelKey: string]: TIpcChannelSchema};
+};
+export function createTypesafeIpc<T extends TIpcSchema>(ipcSchema: T): TIpcOutput<T> {
+	const ipcUtil = new IpcUtil<T>(ipcSchema);
 	return ipcUtil.interface;
 }
