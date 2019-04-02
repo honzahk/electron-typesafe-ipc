@@ -28,7 +28,7 @@ const ipcSchema = {
 	}
 };
 
-//then we create the typesafe ipc object via library function
+//then create the typesafe ipc object via library function
 export const tsipc = createTypesafeIpc(ipcSchema);
 ```
 
@@ -100,6 +100,7 @@ tsipc.rend.remove;
 - [ ] app for testing (with webpack)
 - [ ] minimal app as an example
 - [ ] bi-directional channels (both main->rend and rend->main)
+- [ ] document the end-2-end politics (you always register only one event, which distributes the event further)
 
 ### sync communication
 
