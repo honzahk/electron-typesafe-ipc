@@ -11,10 +11,10 @@ Module for safe inter process communication (IPC) in electron. TypeScript suppor
 configure typesafe ipc object:
 
 ```ts
-//tsipc.ts
+// src/tsipc.ts
 import {createIpcChannel, createTypesafeIpc} from "electron-typesafe-ipc";
 
-//first, describe the ipc communication schema - channel names, their direction (main->rend / rend->main) and type of their params (no params - void)
+//first, describe the ipc communication schema - channel names, their direction (main->rend / rend->main) and type of their params (void means no params)
 const ipcSchema = {
 	main: {
 		//main -> rend communication
@@ -32,9 +32,10 @@ const ipcSchema = {
 export const tsipc = createTypesafeIpc(ipcSchema);
 ```
 
-use it in main:
+use it in main process:
 
 ```ts
+// src/main.ts
 import {tsipc} from "./tsipc.ts";
 
 //register listener
@@ -47,9 +48,10 @@ tsipc.main.on.login(({loginEmail}) => {
 tsipc.main.send.trayLogoutClick(win);
 ```
 
-use it in renderer:
+use it in renderer process:
 
 ```ts
+// src/renderer.ts
 import {tsipc} from "./tsipc.ts";
 
 //register listener
@@ -64,14 +66,50 @@ tsipc.rend.send.login({loginEmail: "email@gmail.com"});
 
 ## API
 
-`...`
+### configuration
+
+```ts
+createIpcChannel<TParamType>({msg: string});
+createTypesafeIpc(ipcSchema: TIpcSchema);
+```
+
+### usage
+
+```ts
+tsipc.main.send;
+
+tsipc.main.on;
+tsipc.main.once;
+tsipc.main.remove;
+```
+
+```ts
+tsipc.rend.send;
+
+tsipc.rend.on;
+tsipc.rend.once;
+tsipc.rend.remove;
+```
 
 ## Notes
 
-- by now, this library is designed to support only one renderer process (although it may work across many renderer processes, this is not tested)
+- currently, this library is designed to support only one renderer process (although it may work across many renderer processes, it is not tested)
 
 ## TODO
 
 - [ ] bi-directional channels (both main->rend and rend->main)
+
+### sync communication
+
+- [ ] design API
+- [ ] implement it (with typesafe return)
+- [ ] implement timeout option
+
+### mutliple renderer processes
+
 - [ ] design API to support multiple renderer processes
 - [ ] implement API to support multiple renderer processes
+
+### runtime checking
+
+- [ ] check that consumer uses the correct side of tsipc (`tsipc.main.*` in main, `tsipc.rend.*` in renderer)
