@@ -97,10 +97,22 @@ tsipc.rend.remove;
 
 ## TODO
 
-- [ ] app for testing (with webpack)
+- [x] bi-directional channels (both main->rend and rend->main)
+- [x] app for testing (with webpack)
 - [ ] minimal app as an example
-- [ ] bi-directional channels (both main->rend and rend->main)
-- [ ] document the end-2-end politics (you always register only one event, which distributes the event further)
+- [ ] change interface for removing listeners (`tsipc.main.removeAll.syncItems();` is not self-containing)
+
+### testing
+
+- [ ] how to implement fully automatizated tests?
+
+### multiple listeners
+
+- [ ] option for single/multiple listeners registration per one channel
+- [ ] if single, throw an error when registering multiple listeners per one channel
+- [ ] if single, implement remove listener method
+- [ ] if multiple, implement remove all listeners method
+- [ ] if multiple, implement remove listener method
 
 ### sync communication
 
@@ -116,3 +128,8 @@ tsipc.rend.remove;
 ### runtime checking
 
 - [ ] check that consumer uses the correct side of tsipc (`tsipc.main.*` in main, `tsipc.rend.*` in renderer)
+
+### documentation
+
+- [ ] motivation
+- [ ] document "rend" instead of "renderer" - into notes
