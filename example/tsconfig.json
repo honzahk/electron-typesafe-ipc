@@ -1,0 +1,13 @@
+{
+	"extends": "./node_modules/electron-webpack/tsconfig-base.json",
+	"compilerOptions": {
+		"sourceMap": true,
+		"jsx": "react",
+
+		"strict": true,
+		"noImplicitAny": false,
+		"noUnusedLocals": false,
+		"strictNullChecks": false,
+		"noImplicitReturns": false
+	}
+}
