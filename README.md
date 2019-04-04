@@ -131,5 +131,6 @@ tsipc.rend.remove;
 
 ### documentation
 
+- [ ] example usage - show bidirectional channel definition
 - [ ] motivation
 - [ ] document "rend" instead of "renderer" - into notes
