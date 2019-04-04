@@ -5,19 +5,47 @@ type TIpcRendererSendFunction<TIpcParam> = (params: TIpcParam) => void;
 type TIpcOnFunction<TIpcParam> = (callback: (params: TIpcParam, e) => void) => void;
 type TIpcOnceFunction<TIpcParam> = TIpcOnFunction<TIpcParam>; //typeof once == typeof on
 type TIpcRemoveFunction = () => void;
+type TIpcRemoveAllFunction = () => void;
 
+/**
+ * output tsipc object type - interface for consumer
+ */
+// prettier-ignore
 type TIpcOutput<T extends TIpcSchema> = {
 	main: {
-		send: {[K in keyof T["main"]]: TIpcMainSendFunction<T["main"][K]["param"]>};
-		on: {[K in keyof T["rend"]]: TIpcOnFunction<T["rend"][K]["param"]>};
-		once: {[K in keyof T["rend"]]: TIpcOnceFunction<T["rend"][K]["param"]>};
-		remove: {[K in keyof T["rend"]]: TIpcRemoveFunction};
+		send: 
+			{[K in keyof T["main"]]: TIpcMainSendFunction<T["main"][K]["param"]>} &
+			{[K in keyof T["both"]]: TIpcMainSendFunction<T["both"][K]["param"]>};
+		on: 
+			{[K in keyof T["rend"]]: TIpcOnFunction<T["rend"][K]["param"]>} &
+			{[K in keyof T["both"]]: TIpcOnFunction<T["both"][K]["param"]>};
+		once: 
+			{[K in keyof T["rend"]]: TIpcOnceFunction<T["rend"][K]["param"]>} &
+			{[K in keyof T["both"]]: TIpcOnceFunction<T["both"][K]["param"]>};
+		remove: 
+			{[K in keyof T["rend"]]: TIpcRemoveFunction} &
+			{[K in keyof T["both"]]: TIpcRemoveFunction};
+		removeAll:
+			{[K in keyof T["rend"]]: TIpcRemoveAllFunction} &
+			{[K in keyof T["both"]]: TIpcRemoveAllFunction};
 	};
 	rend: {
-		send: {[K in keyof T["rend"]]: TIpcRendererSendFunction<T["rend"][K]["param"]>};
-		on: {[K in keyof T["main"]]: TIpcOnFunction<T["main"][K]["param"]>};
-		once: {[K in keyof T["main"]]: TIpcOnceFunction<T["main"][K]["param"]>};
-		remove: {[K in keyof T["main"]]: TIpcRemoveFunction};
+		send: 
+			{[K in keyof T["rend"]]: TIpcRendererSendFunction<T["rend"][K]["param"]>} &
+			{[K in keyof T["both"]]: TIpcRendererSendFunction<T["both"][K]["param"]>};
+		on: 
+			{[K in keyof T["main"]]: TIpcOnFunction<T["main"][K]["param"]>} &
+			{[K in keyof T["both"]]: TIpcOnFunction<T["both"][K]["param"]>};
+		once: 
+			{[K in keyof T["main"]]: TIpcOnceFunction<T["main"][K]["param"]>} &
+			{[K in keyof T["both"]]: TIpcOnceFunction<T["both"][K]["param"]>};
+		remove: 
+			{[K in keyof T["main"]]: TIpcRemoveFunction} &
+			{[K in keyof T["both"]]: TIpcRemoveFunction};
+		removeAll:
+			{[K in keyof T["main"]]: TIpcRemoveAllFunction} &
+			{[K in keyof T["both"]]: TIpcRemoveAllFunction};
+			
 	};
 };
 
@@ -31,13 +59,12 @@ class IpcUtil<T extends TIpcSchema> {
 	};
 
 	public interface: TIpcOutput<T> = {
-		main: {send: {}, on: {}, once: {}, remove: {}},
-		rend: {send: {}, on: {}, once: {}, remove: {}}
+		main: {send: {}, on: {}, once: {}, remove: {}, removeAll: {}},
+		rend: {send: {}, on: {}, once: {}, remove: {}, removeAll: {}}
 	} as any;
 
-
 	// ###############################################################################################################
-	constructor(ipcSchema:TIpcSchema) {
+	constructor(ipcSchema: TIpcSchema) {
 		for (let key in ipcSchema["main"]) {
 			this.registerMainToRend(key, ipcSchema["main"][key]);
 		}
@@ -45,17 +72,23 @@ class IpcUtil<T extends TIpcSchema> {
 		for (let key in ipcSchema["rend"]) {
 			this.registerRendToMain(key, ipcSchema["rend"][key]);
 		}
+
+		for (let key in ipcSchema["both"]) {
+			this.registerMainToRend(key, ipcSchema["both"][key]);
+			this.registerRendToMain(key, ipcSchema["both"][key]);
+		}
 	}
 
 	// ###############################################################################################################
-	registerMainToRend(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
-		this.registerMainSend(key,ipcChannelSchema);
-		this.registerRendOn(key,ipcChannelSchema);
-		this.registerRendOnce(key,ipcChannelSchema);
-		this.registerRendRemove(key,ipcChannelSchema);
+	registerMainToRend(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.registerMainSend(key, ipcChannelSchema);
+		this.registerRendOn(key, ipcChannelSchema);
+		this.registerRendOnce(key, ipcChannelSchema);
+		this.registerRendRemove(key, ipcChannelSchema);
+		this.registerRendRemoveAll(key, ipcChannelSchema);
 	}
 
-	registerMainSend(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+	registerMainSend(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
 		this.interface.main.send[key] = (win: BrowserWindow, params: typeof ipcChannelSchema.param) => {
 			win.webContents.send(ipcChannelSchema.msg, params);
 		};
@@ -94,21 +127,28 @@ class IpcUtil<T extends TIpcSchema> {
 		};
 	}
 
-	// ###############################################################################################################
-	registerRendToMain(key: TChannelKey,ipcChannelSchema: TIpcChannelSchema): void {
-		this.registerRendSend(key,ipcChannelSchema);
-		this.registerMainOn(key,ipcChannelSchema);
-		this.registerMainOnce(key,ipcChannelSchema);
-		this.registerMainRemove(key,ipcChannelSchema);
+	registerMainRemoveAll(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.main.removeAll[key] = () => {
+			ipcMain.removeAllListeners(ipcChannelSchema.msg);
+		};
 	}
 
-	registerRendSend(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+	// ###############################################################################################################
+	registerRendToMain(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.registerRendSend(key, ipcChannelSchema);
+		this.registerMainOn(key, ipcChannelSchema);
+		this.registerMainOnce(key, ipcChannelSchema);
+		this.registerMainRemove(key, ipcChannelSchema);
+		this.registerMainRemoveAll(key, ipcChannelSchema);
+	}
+
+	registerRendSend(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
 		this.interface.rend.send[key] = (params: typeof ipcChannelSchema.param) => {
 			ipcRenderer.send(ipcChannelSchema.msg, params);
 		};
 	}
 
-	registerRendOn(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+	registerRendOn(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
 		this.interface.rend.on[key] = (callback: (params: typeof ipcChannelSchema.param, e) => void) => {
 			const listeners = this.registeredListeners.rend;
 			if (listeners[ipcChannelSchema.msg] != null) {
@@ -119,7 +159,7 @@ class IpcUtil<T extends TIpcSchema> {
 		};
 	}
 
-	registerRendOnce(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+	registerRendOnce(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
 		this.interface.rend.once[key] = (callback: (params: typeof ipcChannelSchema.param, e) => void) => {
 			const listeners = this.registeredListeners.rend;
 			if (listeners[ipcChannelSchema.msg] != null) {
@@ -130,7 +170,7 @@ class IpcUtil<T extends TIpcSchema> {
 		};
 	}
 
-	registerRendRemove(key:TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+	registerRendRemove(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
 		this.interface.rend.remove[key] = () => {
 			const listeners = this.registeredListeners.rend;
 			if (listeners[ipcChannelSchema.msg] == null) {
@@ -138,6 +178,12 @@ class IpcUtil<T extends TIpcSchema> {
 			}
 			ipcRenderer.removeListener(ipcChannelSchema.msg, listeners[ipcChannelSchema.msg]);
 			listeners[ipcChannelSchema.msg] = null;
+		};
+	}
+
+	registerRendRemoveAll(key: TChannelKey, ipcChannelSchema: TIpcChannelSchema): void {
+		this.interface.rend.removeAll[key] = () => {
+			ipcRenderer.removeAllListeners(ipcChannelSchema.msg);
 		};
 	}
 }
@@ -148,7 +194,7 @@ class IpcUtil<T extends TIpcSchema> {
 type TIpcChannelConfig = {
 	//channel name used in the underlying ipc call ipcRenderer.on(msg,()=>{...})
 	msg: string;
-}
+};
 
 /**
  * this function is used for declaration of one specific ipc channel in ipc schema
@@ -166,17 +212,16 @@ export function createIpcChannel<TIpcChannelParam extends void | any>(config: TI
 }
 
 /**
- * 
+ *
  */
-type TIpcChannelSchema =  ReturnType<typeof createIpcChannel>;
+type TIpcChannelSchema = ReturnType<typeof createIpcChannel>;
 
-
-
-
-type TIpcSchema = {
+export type TIpcSchema = {
 	main: {[ipcChannelKey: string]: TIpcChannelSchema};
 	rend: {[ipcChannelKey: string]: TIpcChannelSchema};
+	both: {[ipcChannelKey: string]: TIpcChannelSchema};
 };
+
 export function createTypesafeIpc<T extends TIpcSchema>(ipcSchema: T): TIpcOutput<T> {
 	const ipcUtil = new IpcUtil<T>(ipcSchema);
 	return ipcUtil.interface;
